@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "641275710761",
+    "project_id": "avataria-ab33c",
+    "storage_bucket": "avataria-ab33c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:641275710761:android:40933f3190a86bde80bb38",
+        "android_client_info": {
+          "package_name": "com.avataria.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDAR-wGYYXLpOfKUuPxIF3HkM0JFZMM67k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
