@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/pages/historicoavatares.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class CadastroScreen extends StatefulWidget {
   const CadastroScreen({Key? key}) : super(key: key);
@@ -13,8 +14,79 @@ class _CadastroScreenState extends State<CadastroScreen> {
   final TextEditingController _senhaController = TextEditingController();
   final TextEditingController _confirmarSenhaController =
       TextEditingController();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   bool _obscureSenha = true;
   bool _obscureConfirmarSenha = true;
+  bool _isLoading = false;
+
+  Future<void> _realizarCadastro() async {
+    final email = _emailController.text.trim();
+    final senha = _senhaController.text;
+    final confirmarSenha = _confirmarSenhaController.text;
+
+    // Validações
+    if (email.isEmpty || senha.isEmpty || confirmarSenha.isEmpty) {
+      _mostrarErro('Preencha todos os campos');
+      return;
+    }
+
+    if (senha != confirmarSenha) {
+      _mostrarErro('As senhas não coincidem');
+      return;
+    }
+
+    if (senha.length < 6) {
+      _mostrarErro('A senha deve ter pelo menos 6 caracteres');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final userCredential = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: senha,
+      );
+
+      if (userCredential.user != null) {
+        // Cadastro bem sucedido
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+                builder: (context) => const HistoricoAvataresScreen()),
+          );
+        }
+      }
+    } on FirebaseAuthException catch (e) {
+      String mensagem = 'Erro ao realizar cadastro';
+
+      if (e.code == 'email-already-in-use') {
+        mensagem = 'Este email já está em uso';
+      } else if (e.code == 'invalid-email') {
+        mensagem = 'Email inválido';
+      } else if (e.code == 'weak-password') {
+        mensagem = 'Senha muito fraca';
+      }
+
+      _mostrarErro(mensagem);
+    } catch (e) {
+      _mostrarErro('Erro ao realizar cadastro');
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  void _mostrarErro(String mensagem) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(mensagem),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -102,14 +174,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton(
-                  onPressed: () {
-                    // Aqui você pode adicionar a lógica de cadastro
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) =>
-                                const HistoricoAvataresScreen()));
-                  },
+                  onPressed: _isLoading ? null : _realizarCadastro,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue,
                     minimumSize: const Size(double.infinity, 50),
@@ -117,10 +182,12 @@ class _CadastroScreenState extends State<CadastroScreen> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  child: const Text(
-                    'Cadastrar',
-                    style: TextStyle(fontSize: 18, color: Colors.white),
-                  ),
+                  child: _isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
+                          'Cadastrar',
+                          style: TextStyle(fontSize: 18, color: Colors.white),
+                        ),
                 ),
               ],
             ),
