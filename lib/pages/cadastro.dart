@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'geradoravatar.dart';
+import 'package:myapp/pages/historicoavatares.dart';
 
 class CadastroScreen extends StatefulWidget {
   const CadastroScreen({Key? key}) : super(key: key);
@@ -107,7 +107,8 @@ class _CadastroScreenState extends State<CadastroScreen> {
                     Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (context) => const GeradorAvatarScreen()));
+                            builder: (context) =>
+                                const HistoricoAvataresScreen()));
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue,
