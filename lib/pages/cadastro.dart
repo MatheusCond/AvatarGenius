@@ -24,7 +24,6 @@ class _CadastroScreenState extends State<CadastroScreen> {
     final senha = _senhaController.text;
     final confirmarSenha = _confirmarSenhaController.text;
 
-    // Validações
     if (email.isEmpty || senha.isEmpty || confirmarSenha.isEmpty) {
       _mostrarErro('Preencha todos os campos');
       return;
@@ -49,7 +48,6 @@ class _CadastroScreenState extends State<CadastroScreen> {
       );
 
       if (userCredential.user != null) {
-        // Cadastro bem sucedido
         if (mounted) {
           Navigator.pushReplacement(
             context,
