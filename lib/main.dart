@@ -10,6 +10,8 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   await dotenv.load();
+  print(
+      'Chave OpenAI carregada: ${dotenv.env['OPENAI_API_KEY']?.substring(0, 5) ?? "não encontrada"}...');
   runApp(MyApp());
 }
 

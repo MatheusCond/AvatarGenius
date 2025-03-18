@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:myapp/pages/historicoavatares.dart';
+import 'package:avataria/pages/historicoavatares.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'cadastro.dart';
 

@@ -1,12 +1,12 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:myapp/dall_e_service.dart';
-import 'package:myapp/gemini_service.dart';
+import 'package:avataria/dall_e_service.dart';
+import 'package:avataria/gemini_service.dart';
+import 'package:photo_view/photo_view.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:convert';
-
 
 class GeradorAvatarScreen extends StatefulWidget {
   const GeradorAvatarScreen({Key? key}) : super(key: key);
@@ -21,20 +21,20 @@ class _GeradorAvatarScreenState extends State<GeradorAvatarScreen> {
   Uint8List? _generatedAvatar;
   bool _isLoading = false;
   String _statusMessage = '';
-  
+
   late final GeminiService _geminiService;
   late final DallEService _dallEService;
-  
+
   @override
   void initState() {
     super.initState();
     _initializeServices();
   }
-  
+
   Future<void> _initializeServices() async {
     final geminiApiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
     final dallEApiKey = dotenv.env['DALL_E_API_KEY'] ?? '';
-    
+
     _geminiService = GeminiService(apiKey: geminiApiKey);
     _dallEService = DallEService(apiKey: dallEApiKey);
   }
@@ -47,7 +47,7 @@ class _GeradorAvatarScreenState extends State<GeradorAvatarScreen> {
       _selectedImageBytes = null;
       _selectedImageFile = null;
     });
-    
+
     final ImagePicker picker = ImagePicker();
     try {
       final XFile? imageFile = await picker.pickImage(
@@ -55,10 +55,10 @@ class _GeradorAvatarScreenState extends State<GeradorAvatarScreen> {
         imageQuality: 80,
         maxWidth: 1024,
       );
-      
+
       if (imageFile != null) {
         final bytes = await imageFile.readAsBytes();
-        
+
         setState(() {
           _selectedImageFile = imageFile;
           _selectedImageBytes = bytes;
@@ -68,35 +68,37 @@ class _GeradorAvatarScreenState extends State<GeradorAvatarScreen> {
       _showErrorMessage('Não foi possível selecionar a imagem: $e');
     }
   }
-  
+
   Future<void> _generateAvatar() async {
     if (_selectedImageBytes == null) {
       _showErrorMessage('Selecione uma imagem primeiro');
       return;
     }
-    
+
     setState(() {
       _isLoading = true;
       _statusMessage = 'Analisando imagem...';
     });
-    
+
     try {
-      final String description = await _geminiService.generateImageDescription(_selectedImageBytes!);
-      
+      final String description =
+          await _geminiService.generateImageDescription(_selectedImageBytes!);
+
       setState(() {
         _statusMessage = 'Criando avatar baseado na descrição...';
       });
-      
-      final Uint8List avatarImage = await _dallEService.generateAvatar(description);
-      
+
+      final Uint8List avatarImage =
+          await _dallEService.generateAvatar(description);
+
+      // Salva o avatar e obtém o ID
+      final String avatarId = await _saveGeneratedAvatar(avatarImage);
+
       setState(() {
         _generatedAvatar = avatarImage;
         _isLoading = false;
         _statusMessage = 'Avatar gerado com sucesso!';
       });
-      
-      _saveGeneratedAvatar(avatarImage);
-      
     } catch (e) {
       setState(() {
         _isLoading = false;
@@ -104,17 +106,21 @@ class _GeradorAvatarScreenState extends State<GeradorAvatarScreen> {
       _showErrorMessage('Erro ao gerar avatar: $e');
     }
   }
-  
-  Future<void> _saveGeneratedAvatar(Uint8List avatarData) async {
+
+  Future<String> _saveGeneratedAvatar(Uint8List avatarData) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final timestamp = DateTime.now().millisecondsSinceEpoch.toString();
-      await prefs.setString('avatar_$timestamp', base64Encode(avatarData));
+      final avatarId = 'avatar_$timestamp';
+
+      await prefs.setString(avatarId, base64Encode(avatarData));
+      return avatarId;
     } catch (e) {
       debugPrint('Erro ao salvar avatar: $e');
+      return '';
     }
   }
-  
+
   void _showErrorMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -171,12 +177,45 @@ class _GeradorAvatarScreenState extends State<GeradorAvatarScreen> {
                 ),
                 child: _isLoading
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : _generatedAvatar != null
-                        ? ClipRRect(
-                            borderRadius: BorderRadius.circular(100),
-                            child: Image.memory(
-                              _generatedAvatar!,
-                              fit: BoxFit.cover,
+                    : // No build method, onde está o Image.memory
+                    _generatedAvatar != null
+                        ? InkWell(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => Scaffold(
+                                    body: Stack(
+                                      children: [
+                                        PhotoView(
+                                          imageProvider:
+                                              MemoryImage(_generatedAvatar!),
+                                          minScale:
+                                              PhotoViewComputedScale.contained,
+                                          maxScale:
+                                              PhotoViewComputedScale.covered *
+                                                  2,
+                                        ),
+                                        SafeArea(
+                                          child: IconButton(
+                                            icon: const Icon(Icons.arrow_back,
+                                                color: Colors.white),
+                                            onPressed: () =>
+                                                Navigator.pop(context),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(100),
+                              child: Image.memory(
+                                _generatedAvatar!,
+                                fit: BoxFit.cover,
+                              ),
                             ),
                           )
                         : _selectedImageBytes != null
@@ -195,7 +234,6 @@ class _GeradorAvatarScreenState extends State<GeradorAvatarScreen> {
                                 ),
                               ),
               ),
-              
               if (_statusMessage.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 16.0),
@@ -208,15 +246,15 @@ class _GeradorAvatarScreenState extends State<GeradorAvatarScreen> {
                     textAlign: TextAlign.center,
                   ),
                 ),
-              
               const SizedBox(height: 24),
-              
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Expanded(
                     child: ElevatedButton.icon(
-                      onPressed: _isLoading ? null : () => _getImage(ImageSource.camera),
+                      onPressed: _isLoading
+                          ? null
+                          : () => _getImage(ImageSource.camera),
                       icon: const Icon(Icons.camera_alt),
                       label: const Text(
                         'Câmera',
@@ -234,7 +272,9 @@ class _GeradorAvatarScreenState extends State<GeradorAvatarScreen> {
                   const SizedBox(width: 16),
                   Expanded(
                     child: ElevatedButton.icon(
-                      onPressed: _isLoading ? null : () => _getImage(ImageSource.gallery),
+                      onPressed: _isLoading
+                          ? null
+                          : () => _getImage(ImageSource.gallery),
                       icon: const Icon(Icons.photo_library),
                       label: const Text(
                         'Galeria',
@@ -251,9 +291,7 @@ class _GeradorAvatarScreenState extends State<GeradorAvatarScreen> {
                   ),
                 ],
               ),
-              
               const SizedBox(height: 24),
-              
               if (_selectedImageBytes != null && !_isLoading)
                 SizedBox(
                   width: double.infinity,
@@ -276,7 +314,6 @@ class _GeradorAvatarScreenState extends State<GeradorAvatarScreen> {
                     ),
                   ),
                 ),
-                
               if (_generatedAvatar != null && !_isLoading)
                 Padding(
                   padding: const EdgeInsets.only(top: 16.0),
@@ -284,7 +321,8 @@ class _GeradorAvatarScreenState extends State<GeradorAvatarScreen> {
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: () {
-                        Navigator.pop(context, _generatedAvatar);
+                        // Retorna true para indicar que um novo avatar foi criado
+                        Navigator.pop(context, true);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.orange,

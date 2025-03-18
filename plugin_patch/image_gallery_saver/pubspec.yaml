@@ -1,0 +1,19 @@
+name: image_gallery_saver
+description: A modified version of image_gallery_saver with namespace support
+version: 2.0.3
+homepage: https://github.com/yourname/image_gallery_saver
+
+environment:
+  sdk: ">=2.12.0 <4.0.0"
+  flutter: ">=1.12.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: com.example.imagegallerysaver
+        pluginClass: ImageGallerySaverPlugin
