@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:avataria/pages/login.dart';
@@ -25,6 +26,15 @@ class _HistoricoAvataresScreenState extends State<HistoricoAvataresScreen> {
   void initState() {
     super.initState();
     _carregarAvatares();
+  }
+
+  void _logout(BuildContext context) async {
+    await FirebaseAuth.instance.signOut();
+
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+      (Route<dynamic> route) => false,
+    );
   }
 
   Future<void> _carregarAvatares() async {
@@ -110,14 +120,7 @@ class _HistoricoAvataresScreenState extends State<HistoricoAvataresScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.exit_to_app, color: Colors.black87),
-            onPressed: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const LoginScreen(),
-                ),
-              );
-            },
+            onPressed: () => _logout(context),
           ),
         ],
       ),
