@@ -39,15 +39,72 @@ class _GeradorAvatarScreenState extends State<GeradorAvatarScreen> {
     _dallEService = DallEService(apiKey: dallEApiKey);
   }
 
-  Future<void> _getImage(ImageSource source) async {
-    setState(() {
-      _isLoading = false;
-      _statusMessage = '';
-      _generatedAvatar = null;
-      _selectedImageBytes = null;
-      _selectedImageFile = null;
-    });
+  // Método para mostrar o modal de orientação para a câmera
+  Future<void> _showCameraGuidanceModal() async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Dicas para foto'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: const <Widget>[
+                Text(
+                  '- Posicione o rosto no centro\n- Mantenha boa iluminação\n- Enquadre o rosto bem aproximado.',
+                  style: TextStyle(fontSize: 16),
+                ),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK', style: TextStyle(fontSize: 16)),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _pickImage(ImageSource.camera);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
 
+  // Método para mostrar o modal de orientação para a galeria
+  Future<void> _showGalleryGuidanceModal() async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Dicas para seleção'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: const <Widget>[
+                Text(
+                  'Selecione uma foto com o rosto bem visível, centralizado e bem aproximado.',
+                  style: TextStyle(fontSize: 16),
+                ),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK', style: TextStyle(fontSize: 16)),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _pickImage(ImageSource.gallery);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Método para pegar a imagem da câmera ou galeria
+  Future<void> _pickImage(ImageSource source) async {
     final ImagePicker picker = ImagePicker();
     try {
       final XFile? imageFile = await picker.pickImage(
@@ -66,6 +123,23 @@ class _GeradorAvatarScreenState extends State<GeradorAvatarScreen> {
       }
     } catch (e) {
       _showErrorMessage('Não foi possível selecionar a imagem: $e');
+    }
+  }
+
+  // Método atualizado para limpar os estados e chamar o modal apropriado
+  Future<void> _getImage(ImageSource source) async {
+    setState(() {
+      _isLoading = false;
+      _statusMessage = '';
+      _generatedAvatar = null;
+      _selectedImageBytes = null;
+      _selectedImageFile = null;
+    });
+
+    if (source == ImageSource.camera) {
+      await _showCameraGuidanceModal();
+    } else {
+      await _showGalleryGuidanceModal();
     }
   }
 
@@ -177,8 +251,7 @@ class _GeradorAvatarScreenState extends State<GeradorAvatarScreen> {
                 ),
                 child: _isLoading
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : // No build method, onde está o Image.memory
-                    _generatedAvatar != null
+                    : _generatedAvatar != null
                         ? InkWell(
                             onTap: () {
                               Navigator.push(
