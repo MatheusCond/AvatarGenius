@@ -12,7 +12,7 @@ class DallEService {
   Future<Uint8List> generateAvatar(String description) async {
     try {
       final String prompt =
-          "Crie um único avatar caricato no estilo cartoon no centro da imagem do ombro para cima, com as seguintes características: $description";
+          "Retrato digital de um único avatar caricato no estilo cartoon, exibindo as seguintes características: $description. O avatar está centralizado, mostrando a cabeça e os ombros, com um fundo simples e uniforme.";
 
       final Map<String, dynamic> payload = {
         "model": "dall-e-3",

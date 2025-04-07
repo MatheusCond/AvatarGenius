@@ -20,7 +20,7 @@ class GeminiService {
             "parts": [
               {
                 "text":
-                    "Gere uma descrição detalhada desta pessoa. Inclua: Formato do rosto, Tom de pele, Textura da pele, Cor da pele, Estilo do cabelo, Comprimento do cabelo, Corte do cabelo, Cor do cabelo, Formato dos olhos, Cor da íris, Brilho nos olhos, Detalhes ao redor dos olhos, Espessura das sobrancelhas, Formato das sobrancelhas, Cor das sobrancelhas, Formato do nariz, Detalhes do nariz, Espessura dos lábios, Formato dos lábios, Textura dos lábios, Cor dos lábios, Tipo de barba, Bigode, Cor da barba e do bigode, Expressão facial, Óculos, Piercings, Brincos, Tatuagens, Chapéus e bonés, Tipo de roupa, Estampa ou cor da roupa, Ajuste da roupa. Não diga mais nada além da descrição"
+                    "Gere uma descrição detalhada desta pessoa. Inclua: Formato do rosto, Tom de pele, Textura da pele, Cor da pele, Estilo do cabelo, Comprimento do cabelo, Corte do cabelo, Cor do cabelo, Formato dos olhos, Cor da íris, Brilho nos olhos, Detalhes ao redor dos olhos, Espessura das sobrancelhas, Formato das sobrancelhas, Cor das sobrancelhas, Formato do nariz, Detalhes do nariz, Espessura dos lábios, Formato dos lábios, Textura dos lábios, Cor dos lábios, Tipo de barba se houver, Bigode, Cor da barba e do bigode se houver, Expressão facial, Óculos se houver, Piercings se houver, Brincos se houver, Tatuagens se houver, Chapéus e bonés se houver, Tipo de roupa, Estampa ou cor da roupa, Ajuste da roupa, gênero, se é mulher ou homem. Não diga mais nada além da descrição"
               },
               {
                 "inline_data": {"mime_type": "image/jpeg", "data": base64Image}
