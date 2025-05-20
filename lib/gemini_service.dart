@@ -11,39 +11,63 @@ class GeminiService {
   GeminiService({required String apiKey}) : _apiKey = apiKey;
 
   Future<String> generateImageDescription(Uint8List imageBytes) async {
-    try {
-      final String base64Image = base64Encode(imageBytes);
+    final String base64Image = base64Encode(imageBytes);
 
-      final Map<String, dynamic> payload = {
-        "contents": [
-          {
-            "parts": [
-              {
-                "text":
-                    "Gere uma descrição detalhada desta pessoa. Inclua: Formato do rosto, Tom de pele, Textura da pele, Cor da pele, Estilo do cabelo, Comprimento do cabelo, Corte do cabelo, Cor do cabelo, Formato dos olhos, Cor da íris, Brilho nos olhos, Detalhes ao redor dos olhos, Espessura das sobrancelhas, Formato das sobrancelhas, Cor das sobrancelhas, Formato do nariz, Detalhes do nariz, Espessura dos lábios, Formato dos lábios, Textura dos lábios, Cor dos lábios, Tipo de barba se houver, Bigode, Cor da barba e do bigode se houver, Expressão facial, Óculos se houver, Piercings se houver, Brincos se houver, Tatuagens se houver, Chapéus e bonés se houver, Tipo de roupa, Estampa ou cor da roupa, Ajuste da roupa, gênero, se é mulher ou homem. Não diga mais nada além da descrição"
-              },
-              {
-                "inline_data": {"mime_type": "image/jpeg", "data": base64Image}
+    final String prompt = '''
+Analise a foto e escreva um parágrafo descritivo, em linguagem clara e visual, contendo as seguintes informações sobre esta pessoa:
+1. Formato do rosto (ex.: oval, quadrado)
+2. Tom, cor e textura da pele (ex.: oliva, suave, com pequenas sardas)
+3. Cabelo
+  • Tipo e textura (ex.: liso tipo 1, ondulado tipo 2, cacheado tipo 3A/3B/3C, coily tipo 4A/4B/4C)
+  • Padrão dos cachos (ex.: cachos em mola definidos, ondas largas soltas)
+  • Volume e densidade (ex.: fino e ralo, grosso e volumoso)
+  • Comprimento e corte (ex.: na altura dos ombros, em camadas)
+  • Linha do cabelo e franja (ex.: risca lateral funda, testa livre)
+  • Cor, reflexos e pontas (ex.: castanho médio com mechas loiras)
+4. Formato dos olhos, cor da íris e brilho (ex.: amendoados, verde-água, brilho vivo) e detalhes ao redor (ex.: pés de galinha sutis)
+5. Sobrancelhas (formato, espessura e cor)
+6. Nariz (formato e detalhes, como ponte reta ou ponta arredondada)
+7. Lábios (forma, espessura, textura e cor)
+8. Barba e bigode, se presentes (tipo, comprimento e cor)
+9. Expressão facial (ex.: sorriso leve, olhar pensativo)
+10. Acessórios faciais (óculos, piercings, brincos ou tatuagens visíveis)
+11. Chapéus ou bonés, se houver
+12. Roupa (tipo de peça, cor ou estampa e caimento)
+13. Gênero aparente (masculino, feminino ou outro)
+
+Forneça apenas esse texto descritivo, escrevendo em um único parágrafo coeso.
+''';
+
+    final Map<String, dynamic> payload = {
+      'contents': [
+        {
+          'parts': [
+            {'text': prompt},
+            {
+              'inline_data': {
+                'mime_type': 'image/jpeg',
+                'data': base64Image,
               }
-            ]
-          }
-        ],
-        "generationConfig": {"temperature": 0.4, "maxOutputTokens": 300}
-      };
+            }
+          ]
+        }
+      ],
+      'generationConfig': {
+        'temperature': 0.4,
+        'maxOutputTokens': 300,
+      }
+    };
 
+    try {
       final response = await http.post(
         Uri.parse('$_baseUrl?key=$_apiKey'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
         body: jsonEncode(payload),
       );
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> data = jsonDecode(response.body);
-        final String description =
-            data['candidates'][0]['content']['parts'][0]['text'];
-        return description;
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        return data['candidates'][0]['content']['parts'][0]['text'] as String;
       } else {
         if (kDebugMode) {
           print('Erro na API do Gemini: ${response.body}');
