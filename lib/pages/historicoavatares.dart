@@ -1,5 +1,7 @@
+//lib/pages/historicoavatares.dart
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:avataria/pages/chat_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -38,51 +40,36 @@ class _HistoricoAvataresScreenState extends State<HistoricoAvataresScreen> {
   }
 
   Future<void> _carregarAvatares() async {
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final keys = prefs.getKeys();
+    final prefs = await SharedPreferences.getInstance();
+    final allKeys = prefs.getKeys().toList();
 
-      // Filtrar apenas as chaves relacionadas aos avatares
-      final avatarKeys =
-          keys.where((key) => key.startsWith('avatar_')).toList();
+    // Filtra avatares que têm perfil associado
+    final validAvatarIds = allKeys.where((key) {
+      return key.startsWith('avatar_') &&
+          !key.contains('_profile') &&
+          prefs.containsKey('${key}_profile');
+    }).toList();
 
-      // Ordenar por data (mais recente primeiro)
-      avatarKeys.sort((a, b) => b.compareTo(a));
+    List<AvatarItem> avatares = [];
 
-      List<AvatarItem> avatares = [];
-
-      for (var key in avatarKeys) {
-        final avatarString = prefs.getString(key);
-        if (avatarString != null) {
-          try {
-            final timestamp = int.parse(key.split('_')[1]);
-            final data = DateTime.fromMillisecondsSinceEpoch(timestamp);
-
-            avatares.add(AvatarItem(
-              id: key,
-              imageData: base64Decode(avatarString),
-              data: data,
-            ));
-          } catch (e) {
-            debugPrint('Erro ao decodificar avatar: $e');
-          }
-        }
+    for (final id in validAvatarIds) {
+      final imageData = prefs.getString(id);
+      if (imageData != null) {
+        avatares.add(AvatarItem(
+          id: id,
+          imageData: base64Decode(imageData),
+          data:
+              DateTime.fromMillisecondsSinceEpoch(int.parse(id.split('_')[1])),
+        ));
       }
-
-      setState(() {
-        _avatares = avatares;
-        _isLoading = false;
-      });
-    } catch (e) {
-      debugPrint('Erro ao carregar avatares: $e');
-      setState(() {
-        _isLoading = false;
-      });
     }
+
+    setState(() {
+      _avatares = avatares;
+      _isLoading = false;
+    });
   }
 
   Future<void> _removerAvatar(String id) async {
@@ -169,17 +156,14 @@ class _HistoricoAvataresScreenState extends State<HistoricoAvataresScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          final result = await Navigator.push(
+          await Navigator.push(
+            // Remova o tratamento de resultado
             context,
             MaterialPageRoute(
-              builder: (context) => const GeradorAvatarScreen(),
-            ),
+                builder: (context) => const GeradorAvatarScreen()),
           );
 
-          if (result != null) {
-            // Se um novo avatar foi criado, recarregue a lista
-            _carregarAvatares();
-          }
+          _carregarAvatares();
         },
         backgroundColor: Colors.blue,
         child: const Icon(Icons.add),
@@ -278,6 +262,41 @@ class _HistoricoAvataresScreenState extends State<HistoricoAvataresScreen> {
     }
   }
 
+  void _abrirChat(AvatarItem avatar) async {
+    final prefs = await SharedPreferences.getInstance();
+    final profileString = prefs.getString('${avatar.id}_profile');
+
+    if (profileString == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Perfil não encontrado')),
+      );
+      return;
+    }
+
+    try {
+      final profileData = jsonDecode(profileString) as Map<String, dynamic>;
+
+      // Validação crítica dos campos
+      if (profileData['nome'] == null || profileData['personalidade'] == null) {
+        throw Exception('Perfil corrompido ou incompleto');
+      }
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ChatScreen(
+            avatarImage: avatar.imageData,
+            profileData: profileData,
+          ),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao abrir chat: $e')),
+      );
+    }
+  }
+
 // Modifique o _buildAvatarCard para adicionar a funcionalidade
   Widget _buildAvatarCard(AvatarItem avatar) {
     return Card(
@@ -346,25 +365,15 @@ class _HistoricoAvataresScreenState extends State<HistoricoAvataresScreen> {
                       icon:
                           const Icon(Icons.file_download, color: Colors.green),
                       onPressed: () => _salvarImagem(avatar.imageData),
-                      tooltip: 'Baixar imagem',
-                      iconSize: 22,
                     ),
                     IconButton(
-                      icon: const Icon(Icons.person, color: Colors.blue),
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('Avatar definido como perfil!')),
-                        );
-                      },
-                      tooltip: 'Usar como perfil',
-                      iconSize: 22,
+                      icon: const Icon(Icons.chat,
+                          color: Colors.purple), // Novo ícone
+                      onPressed: () => _abrirChat(avatar), // Novo método
                     ),
                     IconButton(
                       icon: const Icon(Icons.delete, color: Colors.red),
                       onPressed: () => _removerAvatar(avatar.id),
-                      tooltip: 'Remover avatar',
-                      iconSize: 22,
                     ),
                   ],
                 ),

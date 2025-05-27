@@ -1,3 +1,4 @@
+//lib/gemini_service.dart
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
@@ -53,7 +54,7 @@ Forneça apenas esse texto descritivo, escrevendo em um único parágrafo coeso.
         }
       ],
       'generationConfig': {
-        'temperature': 0.4,
+        'temperature': 0.9,
         'maxOutputTokens': 300,
       }
     };
@@ -77,5 +78,50 @@ Forneça apenas esse texto descritivo, escrevendo em um único parágrafo coeso.
     } catch (e) {
       throw Exception('Erro ao processar imagem: $e');
     }
+  }
+
+  Future<String> createChatProfile({
+    required String nome,
+    required String personalidade,
+    required List<Map<String, dynamic>> historico,
+  }) async {
+    final prompt = '''
+Você é o personagem "$nome", com a seguinte personalidade: 
+"$personalidade"
+
+Você deve responder sempre no papel deste personagem, usando tom e vocabulário coerentes com a personalidade fornecida. 
+Matenha-se sempre no personagem ao longo da conversa!
+Contexto da conversa atual:
+${historico.map((msg) => "${msg['autor']}: ${msg['texto']}").join('\n')}
+
+Sua resposta DEVE SER APENAS a continuação natural da conversa.
+Não use cumprimentos em respostas subsequentes, use apenas se o usuário cumprimentar
+''';
+
+    final payload = {
+      'contents': [
+        {
+          'parts': [
+            {'text': prompt},
+          ],
+        }
+      ],
+      'generationConfig': {
+        'temperature': 0.6, // Aumente para respostas mais criativas
+        'maxOutputTokens': 300,
+      },
+    };
+
+    final response = await http.post(
+      Uri.parse('$_baseUrl?key=$_apiKey'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(payload),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['candidates'][0]['content']['parts'][0]['text'] as String;
+    }
+    throw Exception('Falha ao gerar resposta');
   }
 }

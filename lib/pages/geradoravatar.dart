@@ -7,6 +7,7 @@ import 'package:photo_view/photo_view.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:convert';
+import 'package:avataria/pages/chat_screen.dart';
 
 class GeradorAvatarScreen extends StatefulWidget {
   const GeradorAvatarScreen({Key? key}) : super(key: key);
@@ -159,14 +160,11 @@ class _GeradorAvatarScreenState extends State<GeradorAvatarScreen> {
           await _geminiService.generateImageDescription(_selectedImageBytes!);
 
       setState(() {
-        _statusMessage = 'Criando avatar baseado na descrição...';
+        _statusMessage = 'Criando avatar...';
       });
 
       final Uint8List avatarImage =
           await _dallEService.generateAvatar(description);
-
-      // Salva o avatar e obtém o ID
-      final String avatarId = await _saveGeneratedAvatar(avatarImage);
 
       setState(() {
         _generatedAvatar = avatarImage;
@@ -187,11 +185,100 @@ class _GeradorAvatarScreenState extends State<GeradorAvatarScreen> {
       final timestamp = DateTime.now().millisecondsSinceEpoch.toString();
       final avatarId = 'avatar_$timestamp';
 
+      if (prefs.containsKey(avatarId)) {
+        throw Exception('Avatar já gerado');
+      }
+
       await prefs.setString(avatarId, base64Encode(avatarData));
       return avatarId;
     } catch (e) {
       debugPrint('Erro ao salvar avatar: $e');
       return '';
+    }
+  }
+
+  Future<Map<String, String>?> _showPersonalityModal(
+      BuildContext context) async {
+    final nomeController = TextEditingController();
+    final personalidadeController = TextEditingController();
+
+    return showDialog<Map<String, String>>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Criar Companheiro AI'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nomeController,
+                  decoration: const InputDecoration(
+                    labelText: 'Nome do Avatar',
+                    hintText: 'Ex: Zé Caricato',
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: personalidadeController,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Personalidade',
+                    hintText: 'Ex: Extrovertido, adora piadas e futebol...',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context), // Fecha apenas o modal
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (nomeController.text.isEmpty ||
+                    personalidadeController.text.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      content: Text('Preencha todos os campos')));
+                  return;
+                }
+
+                // Fecha o modal E retorna os dados
+                Navigator.pop(context, {
+                  'nome': nomeController.text.isNotEmpty
+                      ? nomeController.text
+                      : 'Sem nome',
+                  'personalidade': personalidadeController.text.isNotEmpty
+                      ? personalidadeController.text
+                      : 'Personalidade não definida',
+                });
+              },
+              child: const Text('Criar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _salvarPerfilAvatar(Map<String, dynamic> data) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final String avatarId = 'avatar_${DateTime.now().millisecondsSinceEpoch}';
+
+      // Salva IMAGEM + PERFIL como uma única operação
+      await prefs.setString(avatarId, base64Encode(_generatedAvatar!));
+      await prefs.setString(
+          '${avatarId}_profile',
+          jsonEncode({
+            'id': avatarId,
+            'nome': data['nome'],
+            'personalidade': data['personalidade'],
+          }));
+    } catch (e) {
+      throw Exception('Falha ao salvar: ${e.toString()}');
     }
   }
 
@@ -393,9 +480,18 @@ class _GeradorAvatarScreenState extends State<GeradorAvatarScreen> {
                   child: SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () {
-                        // Retorna true para indicar que um novo avatar foi criado
-                        Navigator.pop(context, true);
+                      onPressed: () async {
+                        if (_generatedAvatar == null) return;
+
+                        final result = await _showPersonalityModal(context);
+                        if (result == null) return;
+
+                        try {
+                          await _salvarPerfilAvatar(result);
+                          if (mounted) Navigator.pop(context);
+                        } catch (e) {
+                          _showErrorMessage(e.toString());
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.orange,
