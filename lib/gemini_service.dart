@@ -7,7 +7,7 @@ import 'package:flutter/foundation.dart';
 class GeminiService {
   final String _apiKey;
   final String _baseUrl =
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
   GeminiService({required String apiKey}) : _apiKey = apiKey;
 
