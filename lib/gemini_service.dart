@@ -17,7 +17,7 @@ class GeminiService {
     final String prompt = '''
 Analise a foto e escreva um parágrafo descritivo, em linguagem clara e visual, contendo as seguintes informações sobre esta pessoa:
 1. Formato do rosto (ex.: oval, quadrado)
-2. Tom, cor e textura da pele (ex.: oliva, suave, com pequenas sardas)
+2. Tom, cor da pele e textura da pele (ex.: cor: branco, pardo, negro, etc.)
 3. Cabelo
   • Tipo e textura (ex.: liso tipo 1, ondulado tipo 2, cacheado tipo 3A/3B/3C, coily tipo 4A/4B/4C)
   • Padrão dos cachos (ex.: cachos em mola definidos, ondas largas soltas)
