@@ -50,7 +50,7 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyAQANu0Wr8uklom1YjJ2Xi9HNlyh1VCba8',
+    apiKey: 'REPLACE_WITH_FIREBASE_WEB_API_KEY',
     appId: '1:641275710761:web:a2fda27a881da41380bb38',
     messagingSenderId: '641275710761',
     projectId: 'avataria-ab33c',
@@ -60,7 +60,7 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDAR-wGYYXLpOfKUuPxIF3HkM0JFZMM67k',
+    apiKey: 'REPLACE_WITH_FIREBASE_ANDROID_API_KEY',
     appId: '1:641275710761:android:40933f3190a86bde80bb38',
     messagingSenderId: '641275710761',
     projectId: 'avataria-ab33c',
