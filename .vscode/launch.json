@@ -1,0 +1,17 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "AvatarGenius (modo demo)",
+      "request": "launch",
+      "type": "dart",
+      "toolArgs": ["--dart-define=DEMO_MODE=true"]
+    },
+    {
+      "name": "AvatarGenius (com IA, usa env.json)",
+      "request": "launch",
+      "type": "dart",
+      "toolArgs": ["--dart-define-from-file=env.json"]
+    }
+  ]
+}
